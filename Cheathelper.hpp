@@ -85,7 +85,7 @@ public:
             return -1;
         }
 
-        // ✅ Исправлено: добавлен размер памяти
+        
         void* pLibRemote = VirtualAllocEx(hProcess, NULL, strlen(dllPath) + 1, MEM_COMMIT, PAGE_READWRITE);
         if (pLibRemote == NULL) {
             std::cerr << "Failed to allocate memory in remote process. Error: " << GetLastError() << std::endl;
@@ -131,4 +131,5 @@ private:
         
         return std::string(timeStr);
     }
+
 };
