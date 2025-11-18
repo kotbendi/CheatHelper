@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cstdio>
 #include <fstream>
+#include <TlHelp32.h>
 #include <string>
 //Creator: Kotbendi
 class cheat
@@ -22,23 +23,23 @@ public:
         return result != FALSE;
     }
 
-    int CreatFile(const char* text) {
-        
-        std::string filename = "file_" + GetCurrentTimeString() + ".txt";
-        std::ofstream file(filename);
-        file << text;
-        file.close();
-        MessageBoxA(NULL, ("File created: " + filename).c_str(), "Success", MB_OK);
-        return 0;
-    }
 
-    
     int CreatFile(const char* name, const char* text) {
         std::ofstream file(name);
         file << text;
         file.close();
         return 0;
     }
+    int ReadFile(const char* name, char* buffer, size_t bufferSize) {
+        std::ifstream file(name);
+        if (!file.is_open()) {
+            return -1;
+        }
+        file.read(buffer, bufferSize - 1);
+        buffer[file.gcount()] = '\0';
+        file.close();
+        return 0;
+	}
 
     bool IsRunningAsAdmin() {
         BOOL isAdmin = FALSE;
@@ -57,7 +58,7 @@ public:
 
     int GetAdmin() {
         if (IsRunningAsAdmin()) {
-            return 0; 
+            return 0;
         }
         char path[MAX_PATH];
         GetModuleFileNameA(NULL, path, MAX_PATH);
@@ -68,7 +69,7 @@ public:
         sei.lpParameters = "";
         sei.hwnd = NULL;
         sei.nShow = SW_NORMAL;
-        
+
         if (ShellExecuteExA(&sei)) {
             return 0;
         }
@@ -78,14 +79,14 @@ public:
         }
     }
 
-    int LoadedDLL(const char* dllPath, const int pid) { 
+    int LoadedDLL(const char* dllPath, const int pid) {
         HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
         if (hProcess == NULL) {
             std::cerr << "Failed to open process. Error: " << GetLastError() << std::endl;
             return -1;
         }
 
-        
+
         void* pLibRemote = VirtualAllocEx(hProcess, NULL, strlen(dllPath) + 1, MEM_COMMIT, PAGE_READWRITE);
         if (pLibRemote == NULL) {
             std::cerr << "Failed to allocate memory in remote process. Error: " << GetLastError() << std::endl;
@@ -93,7 +94,7 @@ public:
             return -1;
         }
 
-        
+
         if (!WriteProcessMemory(hProcess, pLibRemote, (void*)dllPath, strlen(dllPath) + 1, NULL)) {
             std::cerr << "Failed to write to process memory. Error: " << GetLastError() << std::endl;
             VirtualFreeEx(hProcess, pLibRemote, 0, MEM_RELEASE);
@@ -106,7 +107,7 @@ public:
             pLibRemote, 0, NULL);
         if (hThread == NULL) {
             MessageBoxA(NULL, "Failed to create remote thread.", "Error", MB_OK | MB_ICONERROR);
-            VirtualFreeEx(hProcess, pLibRemote, 0, MEM_RELEASE); 
+            VirtualFreeEx(hProcess, pLibRemote, 0, MEM_RELEASE);
             CloseHandle(hProcess);
             return -1;
         }
@@ -118,18 +119,6 @@ public:
         CloseHandle(hProcess);
 
         return 0;
-    }
-
-private:
-    
-    std::string GetCurrentTimeString() {
-        time_t now = time(0);
-        tm* localTime = localtime(&now);
-        
-        char timeStr[100];
-        strftime(timeStr, sizeof(timeStr), "%Y%m%d_%H%M%S", localTime);
-        
-        return std::string(timeStr);
     }
 
 };
