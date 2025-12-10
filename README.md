@@ -15,5 +15,7 @@ This repository is intended for **educational purposes only**. The code demonstr
 - Security studies
 - Understanding Windows internals
 
+⚠️This lib working only on Windows⚠️
+
 **I am not responsible for any misuse of this code.**
 Version v1.0.0
