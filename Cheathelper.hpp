@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <fstream>
 #include <TlHelp32.h>
+#include <shellapi.h>
 #include <string>
 //Creator: Kotbendi
 class cheat
@@ -122,4 +123,5 @@ public:
     }
 
 };
+
 
