@@ -79,49 +79,107 @@ public:
             return -1;
         }
     }
+        int LoadedDLL(const char* dllPath, const int pid) {
+        HANDLE hProcess = OpenProcess(
+            PROCESS_CREATE_THREAD |
+            PROCESS_QUERY_INFORMATION |
+            PROCESS_VM_OPERATION |
+            PROCESS_VM_WRITE |
+            PROCESS_VM_READ,
+            FALSE,
+            pid
+        );
 
-    int LoadedDLL(const char* dllPath, const int pid) {
-        HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
-        if (hProcess == NULL) {
-            std::cerr << "Failed to open process. Error: " << GetLastError() << std::endl;
+        if (!hProcess) {
+            std::cerr << "OpenProcess failed. Error: " << GetLastError() << std::endl;
             return -1;
         }
 
-
-        void* pLibRemote = VirtualAllocEx(hProcess, NULL, strlen(dllPath) + 1, MEM_COMMIT, PAGE_READWRITE);
-        if (pLibRemote == NULL) {
-            std::cerr << "Failed to allocate memory in remote process. Error: " << GetLastError() << std::endl;
+        
+        HMODULE hKernel32 = GetModuleHandleA("kernel32.dll");
+        if (!hKernel32) {
+            std::cerr << "GetModuleHandle failed. Error: " << GetLastError() << std::endl;
             CloseHandle(hProcess);
             return -1;
         }
 
+        LPTHREAD_START_ROUTINE pLoadLibrary =
+            (LPTHREAD_START_ROUTINE)GetProcAddress(hKernel32, "LoadLibraryA");
 
-        if (!WriteProcessMemory(hProcess, pLibRemote, (void*)dllPath, strlen(dllPath) + 1, NULL)) {
-            std::cerr << "Failed to write to process memory. Error: " << GetLastError() << std::endl;
+        if (!pLoadLibrary) {
+            std::cerr << "GetProcAddress failed. Error: " << GetLastError() << std::endl;
+            CloseHandle(hProcess);
+            return -1;
+        }
+
+        
+        SIZE_T pathLen = strlen(dllPath) + 1;
+
+        void* pLibRemote = VirtualAllocEx(
+            hProcess,
+            nullptr,
+            pathLen,
+            MEM_COMMIT | MEM_RESERVE,
+            PAGE_READWRITE
+        );
+
+        if (!pLibRemote) {
+            std::cerr << "VirtualAllocEx failed. Error: " << GetLastError() << std::endl;
+            CloseHandle(hProcess);
+            return -1;
+        }
+
+        
+        if (!WriteProcessMemory(
+            hProcess,
+            pLibRemote,
+            dllPath,
+            pathLen,
+            nullptr
+        )) {
+            std::cerr << "WriteProcessMemory failed. Error: " << GetLastError() << std::endl;
             VirtualFreeEx(hProcess, pLibRemote, 0, MEM_RELEASE);
             CloseHandle(hProcess);
             return -1;
         }
 
-        HANDLE hThread = CreateRemoteThread(hProcess, NULL, 0,
-            (LPTHREAD_START_ROUTINE)GetProcAddress(GetModuleHandleA("kernel32.dll"), "LoadLibraryA"),
-            pLibRemote, 0, NULL);
-        if (hThread == NULL) {
-            MessageBoxA(NULL, "Failed to create remote thread.", "Error", MB_OK | MB_ICONERROR);
+        
+        HANDLE hThread = CreateRemoteThread(
+            hProcess,
+            nullptr,
+            0,
+            pLoadLibrary,
+            pLibRemote,
+            0,
+            nullptr
+        );
+
+        if (!hThread) {
+            std::cerr << "CreateRemoteThread failed. Error: " << GetLastError() << std::endl;
             VirtualFreeEx(hProcess, pLibRemote, 0, MEM_RELEASE);
             CloseHandle(hProcess);
             return -1;
         }
 
+        
         WaitForSingleObject(hThread, INFINITE);
 
+        
+        DWORD exitCode = 0;
+        if (!GetExitCodeThread(hThread, &exitCode) || exitCode == 0) {
+            std::cerr << "LoadLibrary failed inside target process." << std::endl;
+        }
+
+        
         VirtualFreeEx(hProcess, pLibRemote, 0, MEM_RELEASE);
         CloseHandle(hThread);
         CloseHandle(hProcess);
 
+        return exitCode != 0 ? 0 : -1;
         return 0;
     }
 
 };
+
 
 
