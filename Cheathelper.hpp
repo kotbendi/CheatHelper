@@ -12,7 +12,7 @@ private:
     /* data */
 public:
     
-    bool WriteToProcessMemory(DWORD pid, DWORD address, const void* data, size_t size) {
+    bool WriteToProcessMemory(DWORD pid, DWORD_PTR address, const void* data, size_t size) {
         HANDLE hProcess = OpenProcess(PROCESS_VM_WRITE | PROCESS_VM_OPERATION, FALSE, pid);
         if (hProcess == NULL) {
             MessageBoxA(NULL, "Failed to open process.", "Error", MB_OK | MB_ICONERROR);
@@ -122,3 +122,4 @@ public:
     }
 
 };
+
