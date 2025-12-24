@@ -13,6 +13,30 @@ private:
     /* data */
 public:
     
+DWORD FindProcessId(const std::wstring& processName)
+{
+    PROCESSENTRY32W entry;
+    entry.dwSize = sizeof(PROCESSENTRY32W);
+
+    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (snapshot == INVALID_HANDLE_VALUE)
+        return 0;
+
+    if (Process32FirstW(snapshot, &entry))
+    {
+        do
+        {
+            if (processName == entry.szExeFile)
+            {
+                CloseHandle(snapshot);
+                return entry.th32ProcessID;
+            }
+        } while (Process32NextW(snapshot, &entry));
+    }
+
+    CloseHandle(snapshot);
+    return 0;
+}
     bool WriteToProcessMemory(DWORD pid, DWORD_PTR address, const void* data, size_t size) {
         HANDLE hProcess = OpenProcess(PROCESS_VM_WRITE | PROCESS_VM_OPERATION, FALSE, pid);
         if (hProcess == NULL) {
@@ -180,6 +204,7 @@ public:
     }
 
 };
+
 
 
 
