@@ -12,7 +12,36 @@ class cheat
 private:
     /* data */
 public:
-    
+    uintptr_t GetModuleBaseAddress(DWORD pid, const wchar_t* moduleName)
+{
+    uintptr_t baseAddress = 0;
+
+    HANDLE snapshot = CreateToolhelp32Snapshot(
+        TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32,
+        pid
+    );
+
+    if (snapshot == INVALID_HANDLE_VALUE)
+        return 0;
+
+    MODULEENTRY32W module;
+    module.dwSize = sizeof(module);
+
+    if (Module32FirstW(snapshot, &module))
+    {
+        do
+        {
+            if (!_wcsicmp(module.szModule, moduleName))
+            {
+                baseAddress = (uintptr_t)module.modBaseAddr;
+                break;
+            }
+        } while (Module32NextW(snapshot, &module));
+    }
+
+    CloseHandle(snapshot);
+    return baseAddress;
+}
 DWORD FindProcessId(const std::wstring& processName)
 {
     PROCESSENTRY32W entry;
@@ -204,6 +233,7 @@ DWORD FindProcessId(const std::wstring& processName)
     }
 
 };
+
 
 
 
