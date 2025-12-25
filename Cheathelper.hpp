@@ -13,60 +13,78 @@ private:
     /* data */
 public:
     uintptr_t GetModuleBaseAddress(DWORD pid, const wchar_t* moduleName)
-{
-    uintptr_t baseAddress = 0;
-
-    HANDLE snapshot = CreateToolhelp32Snapshot(
-        TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32,
-        pid
-    );
-
-    if (snapshot == INVALID_HANDLE_VALUE)
-        return 0;
-
-    MODULEENTRY32W module;
-    module.dwSize = sizeof(module);
-
-    if (Module32FirstW(snapshot, &module))
     {
-        do
+        uintptr_t baseAddress = 0;
+
+        HANDLE snapshot = CreateToolhelp32Snapshot(
+            TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32,
+            pid
+        );
+
+        if (snapshot == INVALID_HANDLE_VALUE)
+            return 0;
+
+        MODULEENTRY32W module;
+        module.dwSize = sizeof(module);
+
+        if (Module32FirstW(snapshot, &module))
         {
-            if (!_wcsicmp(module.szModule, moduleName))
+            do
             {
-                baseAddress = (uintptr_t)module.modBaseAddr;
-                break;
-            }
-        } while (Module32NextW(snapshot, &module));
+                if (!_wcsicmp(module.szModule, moduleName))
+                {
+                    baseAddress = (uintptr_t)module.modBaseAddr;
+                    break;
+                }
+            } while (Module32NextW(snapshot, &module));
+        }
+
+        CloseHandle(snapshot);
+        return baseAddress;
     }
-
-    CloseHandle(snapshot);
-    return baseAddress;
-}
-DWORD FindProcessId(const std::wstring& processName)
-{
-    PROCESSENTRY32W entry;
-    entry.dwSize = sizeof(PROCESSENTRY32W);
-
-    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (snapshot == INVALID_HANDLE_VALUE)
-        return 0;
-
-    if (Process32FirstW(snapshot, &entry))
+    DWORD FindProcessId(const std::wstring& processName)
     {
-        do
-        {
-            if (processName == entry.szExeFile)
-            {
-                CloseHandle(snapshot);
-                return entry.th32ProcessID;
-            }
-        } while (Process32NextW(snapshot, &entry));
-    }
+        PROCESSENTRY32W entry;
+        entry.dwSize = sizeof(PROCESSENTRY32W);
 
-    CloseHandle(snapshot);
-    return 0;
-}
-    bool WriteToProcessMemory(DWORD pid, DWORD_PTR address, const void* data, size_t size) {
+        HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+        if (snapshot == INVALID_HANDLE_VALUE)
+            return 0;
+
+        if (Process32FirstW(snapshot, &entry))
+        {
+            do
+            {
+                if (processName == entry.szExeFile)
+                {
+                    CloseHandle(snapshot);
+                    return entry.th32ProcessID;
+                }
+            } while (Process32NextW(snapshot, &entry));
+        }
+
+        CloseHandle(snapshot);
+        return 0;
+    }
+    bool ReadMemory(DWORD pid, LPCVOID addr, LPVOID data, size_t size)
+    {
+        HANDLE hProc = OpenProcess(PROCESS_VM_READ, FALSE, pid);
+        if (!hProc)
+            return false;
+
+        SIZE_T bytesRead = 0;
+        BOOL ok = ReadProcessMemory(
+            hProc,
+            addr,
+            data,
+            size,
+            &bytesRead
+        );
+
+        CloseHandle(hProc);
+        return ok && bytesRead == size;
+    }
+    bool WriteToProcessMemory(DWORD pid, LPVOID address, const void* data, size_t size) {
         HANDLE hProcess = OpenProcess(PROCESS_VM_WRITE | PROCESS_VM_OPERATION, FALSE, pid);
         if (hProcess == NULL) {
             MessageBoxA(NULL, "Failed to open process.", "Error", MB_OK | MB_ICONERROR);
@@ -93,7 +111,7 @@ DWORD FindProcessId(const std::wstring& processName)
         buffer[file.gcount()] = '\0';
         file.close();
         return 0;
-	}
+    }
 
     bool IsRunningAsAdmin() {
         BOOL isAdmin = FALSE;
@@ -132,7 +150,7 @@ DWORD FindProcessId(const std::wstring& processName)
             return -1;
         }
     }
-        int LoadedDLL(const char* dllPath, const int pid) {
+    int LoadedDLL(const char* dllPath, const int pid) {
         HANDLE hProcess = OpenProcess(
             PROCESS_CREATE_THREAD |
             PROCESS_QUERY_INFORMATION |
@@ -148,7 +166,7 @@ DWORD FindProcessId(const std::wstring& processName)
             return -1;
         }
 
-        
+
         HMODULE hKernel32 = GetModuleHandleA("kernel32.dll");
         if (!hKernel32) {
             std::cerr << "GetModuleHandle failed. Error: " << GetLastError() << std::endl;
@@ -165,7 +183,7 @@ DWORD FindProcessId(const std::wstring& processName)
             return -1;
         }
 
-        
+
         SIZE_T pathLen = strlen(dllPath) + 1;
 
         void* pLibRemote = VirtualAllocEx(
@@ -182,7 +200,7 @@ DWORD FindProcessId(const std::wstring& processName)
             return -1;
         }
 
-        
+
         if (!WriteProcessMemory(
             hProcess,
             pLibRemote,
@@ -196,7 +214,7 @@ DWORD FindProcessId(const std::wstring& processName)
             return -1;
         }
 
-        
+
         HANDLE hThread = CreateRemoteThread(
             hProcess,
             nullptr,
@@ -214,16 +232,16 @@ DWORD FindProcessId(const std::wstring& processName)
             return -1;
         }
 
-        
+
         WaitForSingleObject(hThread, INFINITE);
 
-        
+
         DWORD exitCode = 0;
         if (!GetExitCodeThread(hThread, &exitCode) || exitCode == 0) {
             std::cerr << "LoadLibrary failed inside target process." << std::endl;
         }
 
-        
+
         VirtualFreeEx(hProcess, pLibRemote, 0, MEM_RELEASE);
         CloseHandle(hThread);
         CloseHandle(hProcess);
@@ -233,8 +251,3 @@ DWORD FindProcessId(const std::wstring& processName)
     }
 
 };
-
-
-
-
-
