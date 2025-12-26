@@ -1,13 +1,13 @@
 #include "CheatHelper.hpp"
 
 int main(){
-    cheat cheat1;
+    cheat ch;
 
-    cheat1.LoadedDLL("Path to dll","Process ID/PID");
+    ch.LoadedDLL("Path to dll","Process ID/PID");
 
-    cheat1.CreatFile("test.txt","Test text");
+    ch.CreatFile("test.txt","Test text");
 
-    int result = cheat1.GetAdmin();
+    int result = ch.GetAdmin();
 
     if (result == 1){
         // user accept admin rights
@@ -15,10 +15,22 @@ int main(){
     else{
         //user dont accept admin rights
     }
+        uintptr_t base = ch.GetModuleBaseAddress(PID, L"test.dll"); //GetModuleBaseAddress
     
-    cheat1.WriteToProcessMemory(TargetPID,MemoryAddress, &newValue,sizeof(int))
+        printf("Memory info:\n"); //get memory info
+        printf("BaseAddress      : %p\n", mbi.BaseAddress);
+        printf("AllocationBase   : %p\n", mbi.AllocationBase);
+        printf("RegionSize       : %zu bytes\n", mbi.RegionSize);
+        printf("State            : 0x%X\n", mbi.State);
+        printf("Protect          : 0x%X\n", mbi.Protect);
+        printf("AllocProtect     : 0x%X\n", mbi.AllocationProtect);
+        printf("Type             : 0x%X\n", mbi.Type);
+    
+    
+    ch.WriteToProcessMemory(TargetPID,MemoryAddress, &newValue,sizeof(int))
 
     return 0;
 
 }
 //More Soon...
+
