@@ -15,7 +15,11 @@ int main(){
     else{
         //user dont accept admin rights
     }
+        DWORD PID = ch.FindProcessId(L"notepad.exe");//Find PID
+    
         uintptr_t base = ch.GetModuleBaseAddress(PID, L"test.dll"); //GetModuleBaseAddress
+    
+        
     
         printf("Memory info:\n"); //get memory info
         printf("BaseAddress      : %p\n", mbi.BaseAddress);
@@ -33,4 +37,5 @@ int main(){
 
 }
 //More Soon...
+
 
