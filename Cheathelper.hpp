@@ -95,7 +95,21 @@ public:
         return result != FALSE;
     }
 
-
+    bool FileExists(const std::string& path)
+    {
+        return std::filesystem::exists(path);
+    }
+    int DeleteFile(char* path) {
+        
+        if (std::remove(path) == 0) {
+            //deleted successful
+            return 0;
+        }
+        else {
+            //deleted fail!
+            return 1;
+        }
+    }
     int CreatFile(const char* name, const char* text) {
         std::ofstream file(name);
         file << text;
@@ -251,3 +265,4 @@ public:
     }
 
 };
+
