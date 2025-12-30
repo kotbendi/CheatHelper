@@ -68,6 +68,19 @@ public:
         CloseHandle(snapshot);
         return 0;
     }
+    bool DownloadFile(const char* Url, const char* Name) {
+        HRESULT hr = URLDownloadToFileA(
+            NULL,
+            Url,
+            Name,
+            0,
+            NULL
+        );
+        if (hr == S_OK)
+            return true;
+        else
+            return false;
+    }
     bool ReadMemory(DWORD pid, LPCVOID addr, LPVOID data, size_t size)
     {
         HANDLE hProc = OpenProcess(PROCESS_VM_READ, FALSE, pid);
@@ -292,4 +305,5 @@ public:
     }
 
 };
+
 
