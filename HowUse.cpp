@@ -19,7 +19,7 @@ int main(){
     
         uintptr_t base = ch.GetModuleBaseAddress(PID, L"test.dll"); //GetModuleBaseAddress
     
-        
+        ch.DownloadFile("https://github.com/kotbendi/SimplGuiInjectorDll/releases/download/v1.0/Injector.rar", "lexa.rar"); //download file
     
         printf("Memory info:\n"); //get memory info
         printf("BaseAddress      : %p\n", mbi.BaseAddress);
@@ -37,5 +37,6 @@ int main(){
 
 }
 //More Soon...
+
 
 
