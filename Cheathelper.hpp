@@ -68,6 +68,23 @@ public:
         CloseHandle(snapshot);
         return 0;
     }
+    bool CreateConsole(const char* Title = "Console")
+    {
+        
+        if (!AllocConsole())
+            return false; //Error
+
+        SetConsoleTitleA(Title);
+        FILE* fp;
+
+        freopen_s(&fp, "CONOUT$", "w", stdout); 
+        freopen_s(&fp, "CONIN$", "r", stdin);   
+        freopen_s(&fp, "CONOUT$", "w", stderr); 
+
+
+        std::ios::sync_with_stdio();
+        return true;
+    }
     bool DownloadFile(const char* Url, const char* Name) {
         HRESULT hr = URLDownloadToFileA(
             NULL,
@@ -305,5 +322,6 @@ public:
     }
 
 };
+
 
 
