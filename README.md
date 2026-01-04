@@ -19,3 +19,5 @@ This repository is intended for **educational purposes only**. The code demonstr
 
 **I am not responsible for any misuse of this code.**
 Version v1.0.0
+
+![Last Commit](https://img.shields.io/github/last-commit/kotbendi/CheatHelper?display_timestamp=committer)
