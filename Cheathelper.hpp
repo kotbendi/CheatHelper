@@ -8,6 +8,10 @@
 #include <string>
 #include <filesystem>
 #include <direct.h>
+#include <urlmon.h>
+#include <wininet.h>
+#pragma comment(lib, "wininet.lib") 
+#pragma comment(lib, "urlmon.lib")
 //Creator: Kotbendi
 class cheat
 {
@@ -67,6 +71,14 @@ public:
 
         CloseHandle(snapshot);
         return 0;
+    }
+    bool isConnectedToInternet() {
+        if (InternetCheckConnection(L"http://www.google.com", FLAG_ICC_FORCE_CONNECTION, 0)) {
+            return true;
+        }
+        else {
+            return false;
+        }
     }
     bool CreateConsole(const char* Title = "Console")
     {
@@ -322,6 +334,7 @@ public:
     }
 
 };
+
 
 
 
