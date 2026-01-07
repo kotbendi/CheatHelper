@@ -41,13 +41,16 @@ int main(){
     ch.FindWindowByTitle("notepad.exe"); //Find Window by title return true or false
     
 	ch.FindDMAAddy(hproc, &ptr, offset); 
-    
-    ch.WriteToProcessMemory(TargetPID,MemoryAddress, &newValue,sizeof(int));//Write to process memory
+	
+    int value = ch.ReadMemory<int>(Write handle here, 0x111); 
+	
+    ch.WriteMemory<int>(Write handle here, 0x111, value); 
 
     return 0;
 
 }
 //More Soon...
+
 
 
 
