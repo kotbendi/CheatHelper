@@ -10,6 +10,7 @@
 #include <direct.h>
 #include <urlmon.h>
 #include <wininet.h>
+#include <list>
 #pragma comment(lib, "wininet.lib") 
 #pragma comment(lib, "urlmon.lib")
 //Creator: Kotbendi
@@ -72,19 +73,11 @@ public:
         CloseHandle(snapshot);
         return 0;
     }
-    bool isConnectedToInternet() {
-        if (InternetCheckConnection(L"http://www.google.com", FLAG_ICC_FORCE_CONNECTION, 0)) {
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
     bool CreateConsole(const char* Title = "Console")
     {
         
         if (!AllocConsole())
-            return false; //Error
+            return false;
 
         SetConsoleTitleA(Title);
         FILE* fp;
@@ -96,55 +89,22 @@ public:
 
         std::ios::sync_with_stdio();
         return true;
+        
     }
-    bool DownloadFile(const char* Url, const char* Name) {
-        HRESULT hr = URLDownloadToFileA(
-            NULL,
-            Url,
-            Name,
-            0,
-            NULL
-        );
-        if (hr == S_OK)
-            return true;
-        else
-            return false;
-    }
-    bool ReadMemory(DWORD pid, LPCVOID addr, LPVOID data, size_t size)
-    {
-        HANDLE hProc = OpenProcess(PROCESS_VM_READ, FALSE, pid);
-        if (!hProc)
-            return false;
-
-        SIZE_T bytesRead = 0;
-        BOOL ok = ReadProcessMemory(
-            hProc,
-            addr,
-            data,
-            size,
-            &bytesRead
-        );
-
-        CloseHandle(hProc);
-        return ok && bytesRead == size;
-    }
-    uintptr_t FindDMAAddy(HANDLE hProc, uintptr_t ptr, std::vector<unsigned int> offsets) {
-        uintptr_t addr = ptr;
-        for (unsigned int i = 0; i < offsets.size(); i++) {
-            ReadProcessMemory(hProc, (BYTE*)addr, &addr, sizeof(addr), 0);
-            addr += offsets[i];
+    template<typename T> T ReadMemory(HANDLE hProc, uintptr_t Addres) {
+		if (!hProc) {
+			std::perror("Invalid process handle"); //error
+            return T();
         }
-        return addr;
-    }
-    bool WriteToProcessMemory(DWORD pid, LPVOID address, const void* data, size_t size) {
-        HANDLE hProcess = OpenProcess(PROCESS_VM_WRITE | PROCESS_VM_OPERATION, FALSE, pid);
-        if (hProcess == NULL) {
-            MessageBoxA(NULL, "Failed to open process.", "Error", MB_OK | MB_ICONERROR);
-            return false;
+        T buffer;
+        ReadProcessMemory(hProc, (LPCVOID)Addres, &buffer, sizeof(T), nullptr);
+        return buffer;
+    };
+    template<typename T> bool WriteMemory(HANDLE hProc, uintptr_t Addres, T value) {
+        if (!hProc) {
+			return false; //error
         }
-        BOOL result = WriteProcessMemory(hProcess, (LPVOID)address, data, size, NULL);
-        CloseHandle(hProcess);
-        return result != FALSE;
+		return WriteProcessMemory(hProc, (LPVOID)Addres, &value, sizeof(T), nullptr);
     }
 
 
@@ -163,6 +123,29 @@ public:
         buffer[file.gcount()] = '\0';
         file.close();
         return 0;
+    }
+    bool DownloadFile(const char* Url, const char* Name) {
+        HRESULT hr = URLDownloadToFileA(
+            NULL,
+            Url,
+            Name,
+            0,
+            NULL
+        );
+        
+        if (hr == S_OK)
+            return true;
+        else
+            return false;
+
+    }
+    bool isConnectedToInternet() {
+        if (InternetCheckConnection(L"http://www.google.com", FLAG_ICC_FORCE_CONNECTION, 0)) {
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
     bool IsRunningAsAdmin() {
@@ -202,7 +185,7 @@ public:
             return -1;
         }
     }
-    int DeleteFile(char* path) {
+    int DeleteFile(const char* path) {
 
         if (std::remove(path) == 0) {
             //deleted successful
@@ -217,6 +200,14 @@ public:
         char path[260];
         _getcwd(path, sizeof(path));
         return path;
+    }
+    uintptr_t FindDMAAddy(HANDLE hProc, uintptr_t ptr, std::vector<unsigned int> offsets) {
+        uintptr_t addr = ptr;
+        for (unsigned int i = 0; i < offsets.size(); i++) {
+            ReadProcessMemory(hProc, (BYTE*)addr, &addr, sizeof(addr), 0);
+            addr += offsets[i];
+        }
+        return addr;
     }
     bool FileExists(const std::string& path)
     {
@@ -233,6 +224,7 @@ public:
             return true;
         }
     }
+
     int LoadedDLL(const char* dllPath, const int pid) {
         HANDLE hProcess = OpenProcess(
             PROCESS_CREATE_THREAD |
