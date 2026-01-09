@@ -10,7 +10,6 @@
 #include <direct.h>
 #include <urlmon.h>
 #include <wininet.h>
-#include <list>
 #pragma comment(lib, "wininet.lib") 
 #pragma comment(lib, "urlmon.lib")
 //Creator: Kotbendi
@@ -96,7 +95,7 @@ public:
 			std::perror("Invalid process handle"); //error
             return T();
         }
-        T buffer;
+        T buffer
         ReadProcessMemory(hProc, (LPCVOID)Addres, &buffer, sizeof(T), nullptr);
         return buffer;
     };
@@ -201,7 +200,7 @@ public:
         _getcwd(path, sizeof(path));
         return path;
     }
-    uintptr_t FindDMAAddy(HANDLE hProc, uintptr_t ptr, std::vector<unsigned int> offsets) {
+    uintptr_t MemmoryChain(HANDLE hProc, uintptr_t ptr, std::vector<unsigned int> offsets) {
         uintptr_t addr = ptr;
         for (unsigned int i = 0; i < offsets.size(); i++) {
             ReadProcessMemory(hProc, (BYTE*)addr, &addr, sizeof(addr), 0);
@@ -213,7 +212,17 @@ public:
     {
         return std::filesystem::exists(path);
     }
-    
+    uintptr_t ReadPtr(HANDLE hProcess, uintptr_t address)
+    {
+        uintptr_t ptr = 0;
+        ReadProcessMemory(hProcess, (LPCVOID)address, &ptr, sizeof(ptr), nullptr);
+        return ptr;
+    }
+    std::vector<uint8_t> ReadBytes(HANDLE hProсess, uintptr_t adress, int offset, size_t bytes) {
+        std::vector<uint8_t> buffer(bytes);
+		ReadProcessMemory(hProсess, (LPCVOID)(adress + offset), buffer.data(), bytes, nullptr);
+		return buffer;
+    }
     bool FindWindowByTitle(const char* WindowName) {
         HWND hwnd = FindWindowA(0,WindowName);
         if (!hwnd) {
@@ -299,7 +308,6 @@ public:
             0,
             nullptr
         );
-
         if (!hThread) {
             std::cerr << "CreateRemoteThread failed. Error: " << GetLastError() << std::endl;
             VirtualFreeEx(hProcess, pLibRemote, 0, MEM_RELEASE);
@@ -326,7 +334,3 @@ public:
     }
 
 };
-
-
-
-
