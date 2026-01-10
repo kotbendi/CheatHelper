@@ -21,16 +21,6 @@ int main(){
     
     ch.DownloadFile("https://github.com/kotbendi/SimplGuiInjectorDll/releases/download/v1.0/Injector.rar", "lexa.rar"); //download file
     
-    printf("Memory info:\n"); //get memory info
-    printf("BaseAddress      : %p\n", mbi.BaseAddress);
-    printf("AllocationBase   : %p\n", mbi.AllocationBase);
-    printf("RegionSize       : %zu bytes\n", mbi.RegionSize);
-    printf("State            : 0x%X\n", mbi.State);
-    printf("Protect          : 0x%X\n", mbi.Protect);
-    printf("AllocProtect     : 0x%X\n", mbi.AllocationProtect);
-    printf("Type             : 0x%X\n", mbi.Type);
-    
-    std::string path = ch.GetMainFilePath();//Find path to main program
     
     ch.CreateConsole("YourConsoleTitle"); //Create Console
     
@@ -54,6 +44,7 @@ int main(){
 
 }
 //More Soon...
+
 
 
 
