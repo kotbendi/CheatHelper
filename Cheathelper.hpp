@@ -10,10 +10,11 @@
 #include <direct.h>
 #include <urlmon.h>
 #include <wininet.h>
+#include <list>
 #pragma comment(lib, "wininet.lib") 
 #pragma comment(lib, "urlmon.lib")
 //Creator: Kotbendi
-class cheat
+class bob
 {
 private:
     /* data */
@@ -47,6 +48,63 @@ public:
 
         CloseHandle(snapshot);
         return baseAddress;
+    }
+    uintptr_t PatternScan(
+        const std::vector<uint8_t>& data,
+        const char* pattern)
+    {
+        auto toByte = [](char c) -> int {
+            if (c >= '0' && c <= '9') return c - '0';
+            if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+            if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+            return 0;
+            };
+
+        std::vector<int> pat;
+        for (size_t i = 0; pattern[i];)
+        {
+            if (pattern[i] == '?')
+            {
+                pat.push_back(-1);
+                i += 2;
+            }
+            else
+            {
+                pat.push_back(toByte(pattern[i]) << 4 | toByte(pattern[i + 1]));
+                i += 3;
+            }
+        }
+
+        for (size_t i = 0; i < data.size() - pat.size(); i++)
+        {
+            bool found = true;
+            for (size_t j = 0; j < pat.size(); j++)
+            {
+                if (pat[j] != -1 && data[i + j] != pat[j])
+                {
+                    found = false;
+                    break;
+                }
+            }
+            if (found)
+                return i;
+        }
+        return 0;
+    }
+    bool ReadModuleMemory(
+        HANDLE hProc,
+        uintptr_t base,
+        size_t size,
+        std::vector<uint8_t>& buffer)
+    {
+        buffer.resize(size);
+        return ReadProcessMemory(
+            hProc,
+            (LPCVOID)base,
+            buffer.data(),
+            size,
+            nullptr
+        );
     }
     DWORD FindProcessId(const std::wstring& processName)
     {
@@ -103,6 +161,7 @@ public:
         if (!hProc) {
 			return false; //error
         }
+    
 		return WriteProcessMemory(hProc, (LPVOID)Addres, &value, sizeof(T), nullptr);
     }
 
